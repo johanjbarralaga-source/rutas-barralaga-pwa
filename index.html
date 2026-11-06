@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rutas Barralaga - Panel de Despacho</title>
-    <!-- Librerías de Mapbox -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <!-- Librería de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f4f4f9; }
         #map { width: 100vw; height: 100vh; }
         
-        /* Diseño del panel izquierdo flotante */
         .panel-control { 
             position: absolute; top: 20px; left: 20px; z-index: 1; 
             background: white; padding: 20px; border-radius: 12px; 
@@ -22,37 +22,79 @@
             cursor: pointer; font-weight: bold; margin-top: 15px;
         }
         .btn-primario:hover { background: #333; }
+        
+        /* Estilos del formulario emergente */
+        #modal-entrega {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10; width: 90%; max-width: 320px;
+        }
+        .input-form { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-secundario { width: 100%; padding: 10px; margin-top: 10px; background: none; border: none; color: #666; cursor: pointer; }
     </style>
 </head>
 <body>
     
-    <!-- Panel de interfaz -->
     <div class="panel-control">
         <h2 style="margin-top: 0; color: #111;">🚚 Rutas Barralaga</h2>
         <p style="color: #666; font-size: 14px;">Logística Zmax 200 - Última Milla</p>
-        <button class="btn-primario">Ingresar Nueva Entrega</button>
+        <button class="btn-primario" onclick="abrirModal()">Ingresar Nueva Entrega</button>
+    </div>
+
+    <!-- Formulario para nuevos pedidos -->
+    <div id="modal-entrega">
+        <h3 style="margin-top: 0;">Nuevo Paquete</h3>
+        <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente (Ej. Mislady Andrade)">
+        <input type="text" id="direccion-cliente" class="input-form" placeholder="Dirección exacta">
+        <button onclick="guardarEntrega()" class="btn-primario">Guardar en Base de Datos</button>
+        <button onclick="cerrarModal()" class="btn-secundario">Cancelar</button>
     </div>
     
-    <!-- Contenedor del Mapa interactivo -->
     <div id="map"></div>
 
-    <!-- Scripts de Mapbox -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script>
+        // Inicializar Supabase con tus credenciales
+        const supabaseUrl = 'https://spysgozzdsuwluomhnho.supabase.co';
+        const supabaseKey = 'sb_publishable_5ITiNZCiV9W3SGD9uTUXEw_1gyZW07m';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
         // ⚠️ PEGA TU TOKEN DE MAPBOX DENTRO DE LAS COMILLAS
         mapboxgl.accessToken = 'pk.eyJ1Ijoiam9oYW5qYmFycmFsYWdhLXNvdXJjZSIsImEiOiJjbXc1MzZydDYwM3UwMnlvcDMwOXMyMWxrIn0.gWzeC9I8V_c6uRxnRIMIrg';
         
-        // Inicializar el mapa centrado en SPS
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-87.9795, 15.5149], // Coordenadas exactas de San Pedro Sula
+            center: [-87.9795, 15.5149],
             zoom: 13
         });
-
-        // Agregar controles de acercamiento al mapa
         map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+
+        // Funciones del formulario
+        function abrirModal() { document.getElementById('modal-entrega').style.display = 'block'; }
+        function cerrarModal() { document.getElementById('modal-entrega').style.display = 'none'; }
+
+        async function guardarEntrega() {
+            const cliente = document.getElementById('nombre-cliente').value;
+            const direccion = document.getElementById('direccion-cliente').value;
+            
+            if(!cliente || !direccion) return alert('Por favor completa ambos campos.');
+
+            // Enviar datos a la tabla 'entregas'
+            const { data, error } = await supabaseClient
+                .from('entregas')
+                .insert([{ cliente: cliente, direccion: direccion }]);
+
+            if (error) {
+                console.error(error);
+                alert('Hubo un error al guardar. Revisa la consola.');
+            } else {
+                alert('¡Paquete registrado exitosamente!');
+                document.getElementById('nombre-cliente').value = '';
+                document.getElementById('direccion-cliente').value = '';
+                cerrarModal();
+            }
+        }
     </script>
 </body>
 </html>
-
