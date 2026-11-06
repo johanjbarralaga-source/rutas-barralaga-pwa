@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rutas Barralaga - Panel de Despacho</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
-    <!-- Librería de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f4f4f9; }
@@ -23,7 +22,6 @@
         }
         .btn-primario:hover { background: #333; }
         
-        /* Estilos del formulario emergente */
         #modal-entrega {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -41,7 +39,6 @@
         <button class="btn-primario" onclick="abrirModal()">Ingresar Nueva Entrega</button>
     </div>
 
-    <!-- Formulario para nuevos pedidos -->
     <div id="modal-entrega">
         <h3 style="margin-top: 0;">Nuevo Paquete</h3>
         <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente">
@@ -54,12 +51,12 @@
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script>
-        // Supabase conectado con la URL correcta
-        const supabaseUrl = 'https://ojxybcwjjfegqrosvqsj.supabase.co';
+        // 1. Tu URL real y tu llave pública verificadas
+        const supabaseUrl = 'https://spysgozzdsuwluomhnho.supabase.co';
         const supabaseKey = 'sb_publishable_5ITiNZCiV9W3SGD9uTUXEw_1gyZW07m';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Mapbox conectado con tu token
+        // 2. Tu Token real de Mapbox verificado
         mapboxgl.accessToken = 'pk.eyJ1Ijoiam9oYW5qYmFycmFsYWdhLXNvdXJjZSIsImEiOiJjbXc1MzZydDYwM3UwMnlvcDMwOXMyMWxrIn0.gWzeC9I8V_c6uRxnRIMIrg';
         
         const map = new mapboxgl.Map({
@@ -70,20 +67,22 @@
         });
         map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
-        // Funciones del formulario
         function abrirModal() { document.getElementById('modal-entrega').style.display = 'block'; }
         function cerrarModal() { document.getElementById('modal-entrega').style.display = 'none'; }
 
         async function guardarEntrega() {
-            const cliente = document.getElementById('nombre-cliente').value;
-            const direccion = document.getElementById('direccion-cliente').value;
+            const cliente = document.getElementById('nombre-cliente').value.trim();
+            const direccion = document.getElementById('direccion-cliente').value.trim();
             
-            if(!cliente || !direccion) return alert('Por favor completa ambos campos.');
+            if (!cliente || !direccion) return alert('Por favor completa ambos campos.');
 
-            // Enviar datos a la tabla 'entregas'
             const { data, error } = await supabaseClient
                 .from('entregas')
-                .insert([{ cliente: cliente, direccion: direccion }]);
+                .insert([{ 
+                    cliente: cliente, 
+                    direccion: direccion, 
+                    estado: 'pendiente' 
+                }]);
 
             if (error) {
                 console.error(error);
