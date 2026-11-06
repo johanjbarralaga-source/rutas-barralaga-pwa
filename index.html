@@ -87,7 +87,7 @@
 
             if (error) {
                 console.error(error);
-                alert('Hubo un error al guardar. Revisa la consola.');
+                alert('Error de Supabase: ' + error.message');
             } else {
                 alert('¡Paquete registrado exitosamente!');
                 document.getElementById('nombre-cliente').value = '';
