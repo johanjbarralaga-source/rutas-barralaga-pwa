@@ -44,7 +44,7 @@
     <!-- Formulario para nuevos pedidos -->
     <div id="modal-entrega">
         <h3 style="margin-top: 0;">Nuevo Paquete</h3>
-        <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente (Ej. Mislady Andrade)">
+        <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente">
         <input type="text" id="direccion-cliente" class="input-form" placeholder="Dirección exacta">
         <button onclick="guardarEntrega()" class="btn-primario">Guardar en Base de Datos</button>
         <button onclick="cerrarModal()" class="btn-secundario">Cancelar</button>
@@ -54,18 +54,18 @@
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script>
-        // Inicializar Supabase con tus credenciales
-        const supabaseUrl = 'https://spysgozzdsuwluomhnho.supabase.co';
+        // Supabase conectado con la URL correcta
+        const supabaseUrl = 'https://ojxybcwjjfegqrosvqsj.supabase.co';
         const supabaseKey = 'sb_publishable_5ITiNZCiV9W3SGD9uTUXEw_1gyZW07m';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // ⚠️ PEGA TU TOKEN DE MAPBOX DENTRO DE LAS COMILLAS
+        // Mapbox conectado con tu token
         mapboxgl.accessToken = 'pk.eyJ1Ijoiam9oYW5qYmFycmFsYWdhLXNvdXJjZSIsImEiOiJjbXc1MzZydDYwM3UwMnlvcDMwOXMyMWxrIn0.gWzeC9I8V_c6uRxnRIMIrg';
         
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-87.9795, 15.5149],
+            center: [-87.9795, 15.5149], // San Pedro Sula
             zoom: 13
         });
         map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
@@ -87,7 +87,7 @@
 
             if (error) {
                 console.error(error);
-                alert('Error de Supabase: ' + error.message');
+                alert('Error de Supabase: ' + error.message);
             } else {
                 alert('¡Paquete registrado exitosamente!');
                 document.getElementById('nombre-cliente').value = '';
