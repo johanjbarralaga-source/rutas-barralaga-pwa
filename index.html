@@ -1,1 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutas Barralaga - Panel de Despacho</title>
+    <!-- Librerías de Mapbox -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f4f4f9; }
+        #map { width: 100vw; height: 100vh; }
+        
+        /* Diseño del panel izquierdo flotante */
+        .panel-control { 
+            position: absolute; top: 20px; left: 20px; z-index: 1; 
+            background: white; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px;
+        }
+        .btn-primario {
+            background: #111; color: white; border: none; 
+            padding: 12px; width: 100%; border-radius: 6px; 
+            cursor: pointer; font-weight: bold; margin-top: 15px;
+        }
+        .btn-primario:hover { background: #333; }
+    </style>
+</head>
+<body>
+    
+    <!-- Panel de interfaz -->
+    <div class="panel-control">
+        <h2 style="margin-top: 0; color: #111;">🚚 Rutas Barralaga</h2>
+        <p style="color: #666; font-size: 14px;">Logística Zmax 200 - Última Milla</p>
+        <button class="btn-primario">Ingresar Nueva Entrega</button>
+    </div>
+    
+    <!-- Contenedor del Mapa interactivo -->
+    <div id="map"></div>
+
+    <!-- Scripts de Mapbox -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <script>
+        // ⚠️ PEGA TU TOKEN DE MAPBOX DENTRO DE LAS COMILLAS
+        mapboxgl.accessToken = 'TU_TOKEN_DE_MAPBOX_AQUI';
+        
+        // Inicializar el mapa centrado en SPS
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-87.9795, 15.5149], // Coordenadas exactas de San Pedro Sula
+            zoom: 13
+        });
+
+        // Agregar controles de acercamiento al mapa
+        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+    </script>
+</body>
+</html>
 
