@@ -2,97 +2,348 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rutas Barralaga - Panel de Despacho</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rutas Barralaga - Despacho</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f4f4f9; }
-        #map { width: 100vw; height: 100vh; }
-        
-        .panel-control { 
-            position: absolute; top: 20px; left: 20px; z-index: 1; 
-            background: white; padding: 20px; border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px;
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #111; }
+        #map { width: 100vw; height: 58vh; }
+
+        /* Panel inferior estilo App Móvil */
+        .panel-inferior {
+            width: 100vw; height: 42vh; background: #fff;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 15px; overflow-y: auto;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+            position: relative; z-index: 2;
+        }
+        .header-app {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px;
+        }
+        .header-app h2 { margin: 0; font-size: 18px; color: #111; }
+        .stats-ruta {
+            background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
+            padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold;
+            margin-bottom: 12px; display: flex; justify-content: space-between;
         }
         .btn-primario {
-            background: #111; color: white; border: none; 
-            padding: 12px; width: 100%; border-radius: 6px; 
-            cursor: pointer; font-weight: bold; margin-top: 15px;
+            background: #111; color: #fff; border: none; padding: 10px 14px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;
         }
-        .btn-primario:hover { background: #333; }
-        
+        .lista-pedidos { display: flex; flex-direction: column; gap: 10px; }
+        .tarjeta-pedido {
+            border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px;
+            background: #fafafa; display: flex; flex-direction: column; gap: 8px;
+        }
+        .tarjeta-pedido.entregado { opacity: 0.6; background: #f0fdf4; border-color: #86efac; }
+        .pedido-info { display: flex; justify-content: space-between; align-items: flex-start; }
+        .pedido-titulo { font-weight: bold; font-size: 15px; color: #111; margin: 0; }
+        .pedido-dir { font-size: 13px; color: #555; margin: 2px 0 0 0; }
+        .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-accion {
+            flex: 1; padding: 8px; border: none; border-radius: 6px;
+            font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
+        }
+        .btn-wa { background: #25D366; color: white; }
+        .btn-foto { background: #2563eb; color: white; }
+        .btn-ok { background: #16a34a; color: white; }
+        .btn-del { background: #fee2e2; color: #991b1b; flex: 0 0 auto; padding: 8px 12px; }
+
+        /* Modal para agregar paquete */
         #modal-entrega {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 10; width: 90%; max-width: 320px;
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.6); z-index: 20; align-items: center; justify-content: center;
         }
-        .input-form { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
-        .btn-secundario { width: 100%; padding: 10px; margin-top: 10px; background: none; border: none; color: #666; cursor: pointer; }
+        .modal-contenido {
+            background: white; padding: 20px; border-radius: 14px; width: 90%; max-width: 350px;
+        }
+        .input-form {
+            width: 100%; padding: 11px; margin-bottom: 10px;
+            border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
+        }
+        .aviso-mapa {
+            font-size: 12px; color: #2563eb; background: #eff6ff;
+            padding: 8px; border-radius: 6px; margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    
-    <div class="panel-control">
-        <h2 style="margin-top: 0; color: #111;">🚚 Rutas Barralaga</h2>
-        <p style="color: #666; font-size: 14px;">Logística Zmax 200 - Última Milla</p>
-        <button class="btn-primario" onclick="abrirModal()">Ingresar Nueva Entrega</button>
+
+    <div id="map"></div>
+
+    <div class="panel-inferior">
+        <div class="header-app">
+            <div>
+                <h2>🚚 Rutas Barralaga</h2>
+                <span style="font-size: 12px; color: #666;">Toca el mapa o usa el botón para agregar</span>
+            </div>
+            <button class="btn-primario" onclick="abrirModal()">+ Nuevo</button>
+        </div>
+
+        <div class="stats-ruta" id="resumen-ruta">
+            <span>📍 Paradas pendientes: <b id="cont-paradas">0</b></span>
+            <span id="distancia-tiempo">Sin ruta activa</span>
+        </div>
+
+        <div class="lista-pedidos" id="contenedor-pedidos"></div>
     </div>
 
+    <!-- Formulario Nuevo Paquete -->
     <div id="modal-entrega">
-        <h3 style="margin-top: 0;">Nuevo Paquete</h3>
-        <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente">
-        <input type="text" id="direccion-cliente" class="input-form" placeholder="Dirección exacta">
-        <button onclick="guardarEntrega()" class="btn-primario">Guardar en Base de Datos</button>
-        <button onclick="cerrarModal()" class="btn-secundario">Cancelar</button>
+        <div class="modal-contenido">
+            <h3 style="margin-top: 0;">Nuevo Paquete</h3>
+            <div class="aviso-mapa" id="coord-aviso">
+                Se buscará la dirección en San Pedro Sula automáticamente.
+            </div>
+            <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente">
+            <input type="tel" id="telefono-cliente" class="input-form" placeholder="WhatsApp (Ej. 50499999999)">
+            <input type="text" id="direccion-cliente" class="input-form" placeholder="Barrio, Colonia o referencia en SPS">
+            <button onclick="guardarEntrega()" class="btn-primario" style="width: 100%; padding: 12px;">Guardar y Trazar Ruta</button>
+            <button onclick="cerrarModal()" style="width: 100%; padding: 10px; margin-top: 6px; background: none; border: none; color: #666;">Cancelar</button>
+        </div>
     </div>
-    
-    <div id="map"></div>
+
+    <!-- Input oculto para cámara de fotos (POD) -->
+    <input type="file" id="input-camara" accept="image/*" capture="environment" style="display: none;">
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
     <script>
-        // 1. Tu URL real y tu llave pública verificadas
-        const supabaseUrl = 'https://spysgozzdsuwluomhnho.supabase.co';
-        const supabaseKey = 'sb_publishable_5ITiNZCiV9W3SGD9uTUXEw_1gyZW07m';
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // 2. Tu Token real de Mapbox verificado
+        // 1. Credenciales integradas
         mapboxgl.accessToken = 'pk.eyJ1Ijoiam9oYW5qYmFycmFsYWdhLXNvdXJjZSIsImEiOiJjbXc1MzZydDYwM3UwMnlvcDMwOXMyMWxrIn0.gWzeC9I8V_c6uRxnRIMIrg';
-        
+        const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/johanjbarralaga-source/image/upload';
+        const CLOUDINARY_PRESET = 'mmwkrxbv';
+
+        // Coordenadas base en San Pedro Sula
+        const BASE_SPS = [-88.0250, 15.5042];
+        let coordSeleccionada = null;
+        let marcadores = [];
+        let pedidoFotoActual = null;
+
+        // Cargar pedidos guardados automáticamente en el teléfono
+        let entregas = JSON.parse(localStorage.getItem('rutas_barralaga_db') || '[]');
+
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-87.9795, 15.5149], // San Pedro Sula
-            zoom: 13
+            center: BASE_SPS,
+            zoom: 12.5
         });
-        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
-        function abrirModal() { document.getElementById('modal-entrega').style.display = 'block'; }
-        function cerrarModal() { document.getElementById('modal-entrega').style.display = 'none'; }
+        // Permitir tocar cualquier punto del mapa para crear entrega exacta
+        map.on('click', (e) => {
+            coordSeleccionada = [e.lngLat.lng, e.lngLat.lat];
+            document.getElementById('coord-aviso').innerText = '📍 Punto exacto seleccionado en el mapa.';
+            abrirModal();
+        });
+
+        map.on('load', () => {
+            actualizarTodo();
+        });
+
+        function abrirModal() {
+            document.getElementById('modal-entrega').style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-entrega').style.display = 'none';
+            coordSeleccionada = null;
+            document.getElementById('coord-aviso').innerText = 'Se buscará la dirección en San Pedro Sula automáticamente.';
+        }
 
         async function guardarEntrega() {
             const cliente = document.getElementById('nombre-cliente').value.trim();
+            const telefono = document.getElementById('telefono-cliente').value.trim();
             const direccion = document.getElementById('direccion-cliente').value.trim();
-            
-            if (!cliente || !direccion) return alert('Por favor completa ambos campos.');
 
-            const { data, error } = await supabaseClient
-                .from('entregas')
-                .insert([{ 
-                    cliente: cliente, 
-                    direccion: direccion, 
-                    estado: 'pendiente' 
-                }]);
+            if (!cliente || !direccion) return alert('Ingresa el nombre y la dirección.');
 
-            if (error) {
-                console.error(error);
-                alert('Error de Supabase: ' + error.message);
-            } else {
-                alert('¡Paquete registrado exitosamente!');
-                document.getElementById('nombre-cliente').value = '';
-                document.getElementById('direccion-cliente').value = '';
-                cerrarModal();
+            let coords = coordSeleccionada;
+
+            // Si no tocó el mapa, convertir la dirección de SPS en coordenadas GPS
+            if (!coords) {
+                try {
+                    const query = encodeURIComponent(direccion + ', San Pedro Sula, Honduras');
+                    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?proximity=${BASE_SPS[0]},${BASE_SPS[1]}&access_token=${mapboxgl.accessToken}`);
+                    const data = await res.json();
+                    if (data.features && data.features.length > 0) {
+                        coords = data.features[0].center;
+                    } else {
+                        coords = [BASE_SPS[0] + (Math.random() - 0.5) * 0.02, BASE_SPS[1] + (Math.random() - 0.5) * 0.02];
+                    }
+                } catch (e) {
+                    coords = BASE_SPS;
+                }
             }
+
+            const nuevoPedido = {
+                id: Date.now(),
+                cliente,
+                telefono,
+                direccion,
+                coords,
+                estado: 'pendiente',
+                foto: null
+            };
+
+            entregas.push(nuevoPedido);
+            guardarEnMemoria();
+
+            document.getElementById('nombre-cliente').value = '';
+            document.getElementById('telefono-cliente').value = '';
+            document.getElementById('direccion-cliente').value = '';
+            cerrarModal();
+            actualizarTodo();
+        }
+
+        function guardarEnMemoria() {
+            localStorage.setItem('rutas_barralaga_db', JSON.stringify(entregas));
+        }
+
+        async function actualizarTodo() {
+            // 1. Limpiar marcadores anteriores
+            marcadores.forEach(m => m.remove());
+            marcadores = [];
+
+            // Marcador Punto Base (Salida)
+            const elBase = document.createElement('div');
+            elBase.innerHTML = '🏢';
+            elBase.style.fontSize = '24px';
+            marcadores.push(new mapboxgl.Marker(elBase).setLngLat(BASE_SPS).setPopup(new mapboxgl.Popup().setText('Base Rutas Barralaga')).addTo(map));
+
+            // 2. Dibujar lista y marcadores
+            const contenedor = document.getElementById('contenedor-pedidos');
+            contenedor.innerHTML = '';
+
+            const pendientes = entregas.filter(e => e.estado === 'pendiente');
+            document.getElementById('cont-paradas').innerText = pendientes.length;
+
+            entregas.forEach((item, index) => {
+                // Pin en el mapa
+                const colorPin = item.estado === 'entregado' ? '#16a34a' : '#111111';
+                const marker = new mapboxgl.Marker({ color: colorPin })
+                    .setLngLat(item.coords)
+                    .setPopup(new mapboxgl.Popup().setHTML(`<b>${item.cliente}</b><br>${item.direccion}`))
+                    .addTo(map);
+                marcadores.push(marker);
+
+                // Tarjeta en la lista
+                const card = document.createElement('div');
+                card.className = `tarjeta-pedido ${item.estado === 'entregado' ? 'entregado' : ''}`;
+                card.innerHTML = `
+                    <div class="pedido-info" onclick="map.flyTo({center: [${item.coords}], zoom: 15})">
+                        <div>
+                            <p class="pedido-titulo">#${index + 1} - ${item.cliente} ${item.estado === 'entregado' ? '✅' : ''}</p>
+                            <p class="pedido-dir">📍 ${item.direccion}</p>
+                            ${item.foto ? `<a href="${item.foto}" target="_blank" style="font-size:12px; color:#2563eb;">📷 Ver foto de entrega</a>` : ''}
+                        </div>
+                    </div>
+                    <div class="acciones">
+                        <button class="btn-accion btn-wa" onclick="avisarWhatsApp(${item.id})">💬 WhatsApp</button>
+                        <button class="btn-accion btn-foto" onclick="tomarFoto(${item.id})">📷 Foto POD</button>
+                        ${item.estado === 'pendiente' ? `<button class="btn-accion btn-ok" onclick="completarPedido(${item.id})">✔️ Entregado</button>` : ''}
+                        <button class="btn-accion btn-del" onclick="borrarPedido(${item.id})">🗑️</button>
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+
+            // 3. Trazar línea de ruta en el mapa si hay pendientes
+            trazarRutaMapbox(pendientes);
+        }
+
+        async function trazarRutaMapbox(pendientes) {
+            if (map.getSource('ruta')) {
+                map.removeLayer('ruta-linea');
+                map.removeSource('ruta');
+            }
+
+            if (pendientes.length === 0) {
+                document.getElementById('distancia-tiempo').innerText = 'Sin ruta activa';
+                return;
+            }
+
+            const puntos = [BASE_SPS, ...pendientes.map(p => p.coords)].map(c => c.join(',')).join(';');
+            try {
+                const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${puntos}?geometries=geojson&access_token=${mapboxgl.accessToken}`);
+                const data = await res.json();
+                if (data.routes && data.routes.length > 0) {
+                    const ruta = data.routes[0];
+                    const km = (ruta.distance / 1000).toFixed(1);
+                    const min = Math.round(ruta.duration / 60);
+                    document.getElementById('distancia-tiempo').innerText = `🚗 ${km} km | ⏱️ ${min} min`;
+
+                    map.addSource('ruta', {
+                        type: 'geojson',
+                        data: { type: 'Feature', geometry: ruta.geometry }
+                    });
+                    map.addLayer({
+                        id: 'ruta-linea',
+                        type: 'line',
+                        source: 'ruta',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#2563eb', 'line-width': 5 }
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function avisarWhatsApp(id) {
+            const p = entregas.find(e => e.id === id);
+            if (!p) return;
+            const msj = encodeURIComponent(`Hola ${p.cliente}, te saludamos de *Rutas Barralaga* 🚚. Tu paquete hacia *${p.direccion}* ya va en ruta.`);
+            const num = p.telefono ? p.telefono.replace(/\D/g, '') : '';
+            window.open(`https://wa.me/${num}?text=${msj}`, '_blank');
+        }
+
+        function tomarFoto(id) {
+            pedidoFotoActual = id;
+            document.getElementById('input-camara').click();
+        }
+
+        document.getElementById('input-camara').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !pedidoFotoActual) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_PRESET);
+
+            try {
+                alert('Subiendo comprobante de entrega a la nube...');
+                const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.secure_url) {
+                    const idx = entregas.findIndex(item => item.id === pedidoFotoActual);
+                    if (idx !== -1) {
+                        entregas[idx].foto = data.secure_url;
+                        entregas[idx].estado = 'entregado';
+                        guardarEnMemoria();
+                        actualizarTodo();
+                        alert('¡Foto guardada y paquete marcado como entregado!');
+                    }
+                }
+            } catch (err) {
+                alert('No se pudo subir la foto, verifica tu conexión.');
+            }
+        });
+
+        function completarPedido(id) {
+            const idx = entregas.findIndex(e => e.id === id);
+            if (idx !== -1) {
+                entregas[idx].estado = 'entregado';
+                guardarEnMemoria();
+                actualizarTodo();
+            }
+        }
+
+        function borrarPedido(id) {
+            entregas = entregas.filter(e => e.id !== id);
+            guardarEnMemoria();
+            actualizarTodo();
         }
     </script>
 </body>
