@@ -1,232 +1,418 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rutas Barralaga - Sistema Operativo de Despacho</title>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
-    <style>
-        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-        body { margin: 0; padding: 0; background: #f4f4f9; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Panel izquierdo: Gestión y Lista */
-        .panel-control {
-            width: 420px; height: 100vh; background: #fff; box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; z-index: 10;
-        }
-        .header-panel { padding: 20px; background: #111; color: #fff; }
-        .header-panel h2 { margin: 0; font-size: 18px; }
-        .header-panel p { margin: 4px 0 0 0; font-size: 12px; color: #aaa; }
-
-        .acciones-superiores { padding: 15px; background: #fafafa; border-bottom: 1px solid #e5e7eb; display: flex; gap: 8px; }
-        .btn-principal {
-            background: #111; color: #fff; border: none; padding: 10px 14px;
-            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; flex: 1;
-        }
-        .btn-principal:hover { background: #333; }
-        
-        .lista-pedidos { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        
-        .tarjeta-pedido {
-            border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; background: #fafafa;
-            display: flex; flex-direction: column; gap: 6px;
-        }
-        .tarjeta-pedido.completado { background: #f0fdf4; border-color: #86efac; opacity: 0.7; }
-        
-        .info-superior { display: flex; justify-content: space-between; align-items: flex-start; }
-        .badge-servicio { background: #2563eb; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .badge-numero { background: #111; color: #fff; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
-        
-        .cliente-nombre { font-weight: bold; font-size: 14px; color: #111; margin: 4px 0 0 0; }
-        .cliente-dir { font-size: 12px; color: #555; margin: 2px 0 0 0; }
-        
-        .botones-accion { display: flex; gap: 6px; margin-top: 6px; }
-        .btn { flex: 1; padding: 7px; border: none; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; }
-        .btn-wa { background: #25D366; color: #fff; }
-        .btn-ok { background: #16a34a; color: #fff; }
-        .btn-map { background: #e5e7eb; color: #111; }
-
-        /* Panel derecho: Mapa */
-        #map { flex: 1; height: 100vh; }
-
-        /* Modal Nuevo Servicio */
-        #modal-servicio {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.6); z-index: 20; align-items: center; justify-content: center;
-        }
-        .modal-contenido { background: white; padding: 20px; border-radius: 14px; width: 90%; max-width: 360px; }
-        .input-form { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; }
-        .select-form { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; background: white; }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; overflow: auto; }
-            .panel-control { width: 100vw; height: 50vh; }
-            #map { width: 100vw; height: 50vh; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orden Técnica B2B/B2C - Rutas Barralaga</title>
+  <style>
+    :root {
+      --rb-red: #c62828;
+      --rb-dark: #1e293b;
+      --rb-gray: #f8fafc;
+      --rb-border: #cbd5e1;
+      --rb-ok: #15803d;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #e2e8f0; margin: 0; padding: 15px; color: var(--rb-dark); }
+    .rb-container { max-width: 860px; margin: 0 auto; background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
+    .rb-header { background: var(--rb-dark); color: #fff; padding: 20px; border-bottom: 4px solid var(--rb-red); }
+    .rb-header h1 { margin: 0; font-size: 1.35rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .rb-header p { margin: 5px 0 0; font-size: 0.85rem; color: #cbd5e1; }
+    .rb-section { padding: 20px; border-bottom: 1px solid var(--rb-border); }
+    .rb-section h2 { margin-top: 0; font-size: 1.05rem; color: var(--rb-red); text-transform: uppercase; border-left: 4px solid var(--rb-red); padding-left: 10px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    label { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; color: #334155; }
+    input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--rb-border); border-radius: 6px; font-size: 0.9rem; background: var(--rb-gray); }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--rb-red); background: #fff; }
+    .unit-badge { background: #fef2f2; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85rem; }
+    .stop-row { background: var(--rb-gray); padding: 12px; border-radius: 6px; border: 1px dashed var(--rb-border); margin-bottom: 10px; }
+    .btn-secondary { background: var(--rb-dark); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+    .btn-remove { background: #dc2626; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-top: 6px; }
+    .summary-box { background: #0f172a; color: #fff; padding: 18px; border-radius: 8px; margin-top: 10px; }
+    .summary-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.9rem; border-bottom: 1px solid #334155; }
+    .summary-total { display: flex; justify-content: space-between; padding-top: 10px; font-size: 1.2rem; font-weight: 800; color: #f87171; }
+    .alert-box { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; margin-top: 10px; border: 1px solid #f87171; }
+    .btn-whatsapp { width: 100%; background: #16a34a; color: #fff; border: none; padding: 15px; font-size: 1.05rem; font-weight: 800; border-radius: 8px; cursor: pointer; margin-top: 15px; text-transform: uppercase; }
+    .btn-whatsapp:hover { background: var(--rb-ok); }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+    .checkbox-group label { display: flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer; }
+    .checkbox-group input { width: auto; }
+  </style>
 </head>
 <body>
 
-    <!-- Panel Izquierdo -->
-    <div class="panel-control">
-        <div class="header-panel">
-            <h2>🚚 Rutas Barralaga</h2>
-            <p>Logística y Distribución - Zmax 200</p>
-        </div>
-        
-        <div class="acciones-superiores">
-            <button class="btn-principal" onclick="abrirModal()">+ Registrar Servicio</button>
-        </div>
+<div class="rb-container">
+  <div class="rb-header">
+    <h1>Rutas Barralaga — Orden Técnica de Recolecta y Entrega B2B / B2C</h1>
+    <p>Titular: Johan Josué Barralaga Cruz | RTN: 05011995073267 | Hub: Col. San Pedro, SPS (FXRW+FMH) | Exento de ISV</p>
+  </div>
 
-        <div class="lista-pedidos" id="contenedor-lista"></div>
+  <form id="rbForm" onsubmit="enviarOrdenWhatsApp(event)">
+    <!-- 1. PERFIL Y CUENTA -->
+    <div class="rb-section">
+      <h2>1. Datos de la Cuenta y Nivel de Servicio (SLA)</h2>
+      <div class="grid-3">
+        <div>
+          <label>Segmento Operativo</label>
+          <select id="segmento" required>
+            <option value="B2B (Corporativo / Industrial / CEDIS)">B2B (Corporativo / CEDIS)</option>
+            <option value="B2C (Comercio a Cliente Residencial)">B2C (Entrega a Cliente Final)</option>
+            <option value="Híbrido (B2B + Reparto B2C)">Híbrido (B2B + B2C)</option>
+          </select>
+        </div>
+        <div>
+          <label>Modalidad de Operación</label>
+          <select id="modalidad" onchange="toggleParadas()" required>
+            <option value="Flete Express Directo">Flete Express Directo (Punto a Punto)</option>
+            <option value="Multidrop (1 Recolecta a Varias Entregas)">Multidrop (Reparto Múltiple)</option>
+            <option value="Milk Run (Varias Recolectas a 1 Destino)">Milk Run (Consolidación Proveedores)</option>
+            <option value="Cross-Docking / Puente">Cross-Docking / Puente</option>
+            <option value="Ruta Dedicada">Ruta Dedicada</option>
+            <option value="Logística Inversa">Logística Inversa (Retorno)</option>
+          </select>
+        </div>
+        <div>
+          <label>Nivel de Servicio (SLA)</label>
+          <select id="sla" required>
+            <option value="Same-Day (Mismo Día)">Same-Day (Mismo Día)</option>
+            <option value="Crítico / Cita Exacta en Rampa">Crítico / Cita Exacta</option>
+            <option value="Estándar Programado (24-48h)">Estándar Programado (24-48h)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:12px;">
+        <div>
+          <label>Razón Social / Cliente Contratante</label>
+          <input type="text" id="clienteNombre" placeholder="Empresa o Nombre" required>
+        </div>
+        <div>
+          <label>RTN / Identidad</label>
+          <input type="text" id="clienteRtn" placeholder="RTN o DNI">
+        </div>
+        <div>
+          <label>Orden de Compra (PO) / Factura N.º</label>
+          <input type="text" id="ordenCompra" placeholder="Ej. OC-4502 / Fact-991">
+        </div>
+      </div>
     </div>
 
-    <!-- Mapa Maestro -->
-    <div id="map"></div>
-
-    <!-- Modal para Agregar Servicio -->
-    <div id="modal-servicio">
-        <div class="modal-contenido">
-            <h3 style="margin-top: 0; font-size: 16px;">Nuevo Servicio / Entrega</h3>
-            <select id="tipo-servicio" class="select-form">
-                <option value="Entregas Express">01. Entregas Express</option>
-                <option value="Encomiendas">02. Encomiendas y Paquetería</option>
-                <option value="Multidrop">03. Distribución Multidestino</option>
-                <option value="Dedicada">05. Rutas Empresariales Dedicadas</option>
-                <option value="Agente Local">06. Agente Local en Honduras</option>
-            </select>
-            <input type="text" id="nombre-cliente" class="input-form" placeholder="Nombre del cliente o comercio">
-            <input type="tel" id="tel-cliente" class="input-form" placeholder="Teléfono / WhatsApp (Ej. 50499999999)">
-            <input type="text" id="dir-cliente" class="input-form" placeholder="Colonia, Barrio o referencia exacta en SPS">
-            
-            <button onclick="guardarServicio()" class="btn-principal" style="width: 100%; padding: 11px;">Guardar en Ruta</button>
-            <button onclick="cerrarModal()" style="width: 100%; padding: 8px; margin-top: 5px; background: none; border: none; color: #666; cursor: pointer;">Cancelar</button>
+    <!-- 2. ORIGEN, DESTINO Y ACCESIBILIDAD -->
+    <div class="rb-section">
+      <h2>2. Especificaciones de Origen, Destino y Rampa</h2>
+      <div class="grid-2">
+        <div>
+          <label>Punto de Recolecta Principal (Dirección y Empresa)</label>
+          <input type="text" id="origenDir" placeholder="Bodega / Planta / Colonia, Municipio" required>
+          <label style="margin-top:8px;">Contacto en Recolecta y Hora de Cita</label>
+          <input type="text" id="origenContacto" placeholder="Nombre, Teléfono y Hora (Ej. 09:00 AM)" required>
+          <label style="margin-top:8px;">Acceso en Origen</label>
+          <select id="origenAcceso">
+            <option value="Nivel de Piso / Bodega">Nivel de Piso / Bodega</option>
+            <option value="Andén Industrial (Carga a desnivel)">Andén Industrial (Carga a desnivel)</option>
+            <option value="Local Comercial">Local Comercial</option>
+          </select>
         </div>
+        <div>
+          <label>Punto de Entrega Principal (Dirección y Consignatario)</label>
+          <input type="text" id="destinoDir" placeholder="Planta / Cliente / Colonia, Municipio" required>
+          <label style="margin-top:8px;">Contacto en Entrega y Ventana Horaria</label>
+          <input type="text" id="destinoContacto" placeholder="Nombre, Teléfono y Hora" required>
+          <label style="margin-top:8px;">Acceso en Destino</label>
+          <select id="destinoAcceso">
+            <option value="Puerta Residencial / Local B2C">Puerta Residencial / Local B2C</option>
+            <option value="Nivel de Piso / Almacén B2B">Nivel de Piso / Almacén B2B</option>
+            <option value="Andén Industrial (Descarga a desnivel)">Andén Industrial (Descarga a desnivel)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Requisitos Operativos, Seguridad (EPP/EHS) y Documentos de Retorno (POD)</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" class="req-check" value="Casco, Botas y Chaleco (EPP)"> EPP en Planta (Casco/Botas/Chaleco)</label>
+          <label><input type="checkbox" class="req-check" value="Retorno de Factura/Guía Sellada"> Retornar Factura/Guía Firmada y Sellada</label>
+          <label><input type="checkbox" class="req-check" value="Verificación 100% Pieza por Pieza"> Verificación 100% Pieza por Pieza</label>
+          <label><input type="checkbox" class="req-check" value="Bulto Cerrado con Cinta/Marchamo"> Bulto Cerrado con Marchamo</label>
+        </div>
+      </div>
+
+      <!-- SECCIÓN DINÁMICA MULTIDROP / MILK RUN -->
+      <div id="bloqueParadas" style="display:none; margin-top:16px;">
+        <label style="color:var(--rb-red);">Secuencia de Paradas Adicionales (Multidrop / Milk Run)</label>
+        <div id="listaParadas"></div>
+        <button type="button" class="btn-secondary" onclick="agregarParada()">+ Agregar Parada a la Secuencia</button>
+      </div>
     </div>
 
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
-    <script>
-        mapboxgl.accessToken = 'pk.eyJ1Ijoiam9oYW5qYmFycmFsYWdhLXNvdXJjZSIsImEiOiJjbXc1MzZydDYwM3UwMnlvcDMwOXMyMWxrIn0.gWzeC9I8V_c6uRxnRIMIrg';
-        const BASE_SPS = [-88.0250, 15.5042];
+    <!-- 3. CUBICAJE ZMAX 200 -->
+    <div class="rb-section">
+      <h2>3. Cubicaje Técnico en Unidad ZMoto ZMax 200 (Máx. 400 kg)</h2>
+      <div class="unit-badge">
+        <strong>Unidad Asignada:</strong> ZMoto ZMax 200 Roja con Caja Seca Blanca<br>
+        • <strong>Zona A (Caja Seca):</strong> 1.05m (Ancho) x 1.50m (Largo) x 1.60m (Alto) = <strong>2.52 m³</strong> (Carga protegida / pesada en piso).<br>
+        • <strong>Zona B (Parrilla Techo):</strong> 1.05m (Ancho) x 2.50m (Largo) = <strong>2.62 m²</strong> (Perfiles, tubería, escaleras; máx. recomendado 100 kg por centro de gravedad).
+      </div>
 
-        // Memoria local del teléfono/navegador
-        let servicios = JSON.parse(localStorage.getItem('rutas_barralaga_operacion') || '[]');
-        let marcadores = [];
+      <div class="grid-3">
+        <div>
+          <label>Peso en Caja Seca (kg)</label>
+          <input type="number" id="pesoCaja" value="0" min="0" max="400" oninput="calcularTodo()" required>
+        </div>
+        <div>
+          <label>Peso en Parrilla de Techo (kg)</label>
+          <input type="number" id="pesoTecho" value="0" min="0" max="150" oninput="calcularTodo()" required>
+        </div>
+        <div>
+          <label>Total de Bultos / Unidades</label>
+          <input type="number" id="totalBultos" placeholder="Cant. de cajas/piezas" min="1" required>
+        </div>
+      </div>
 
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: BASE_SPS,
-            zoom: 13
-        });
-        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+      <div class="grid-2" style="margin-top:12px;">
+        <div>
+          <label>Descripción de la Mercadería y Dimensiones</label>
+          <input type="text" id="descCarga" placeholder="Ej. 8 cajas de repuestos + 4 tubos PVC de 2.4m" required>
+        </div>
+        <div>
+          <label>Valor Declarado de Mercadería (L.)</label>
+          <input type="number" id="valorDeclarado" placeholder="Cobertura base hasta L. 1,000" value="1000">
+        </div>
+      </div>
 
-        map.on('load', () => {
-            renderizarOperacion();
-        });
+      <div class="checkbox-group" style="margin-top:10px;">
+        <label><input type="checkbox" class="manejo-check" value="Frágil / No Estibar Encima"> Frágil / No Estibar</label>
+        <label><input type="checkbox" class="manejo-check" value="Sujeción con Ratchet y Lona en Techo"> Amarre Ratchet + Lona en Techo</label>
+        <label><input type="checkbox" class="manejo-check" value="Químico / Pintura / Ferretero"> Material Químico / Ferretero</label>
+      </div>
 
-        function abrirModal() { document.getElementById('modal-servicio').style.display = 'flex'; }
-        function cerrarModal() { document.getElementById('modal-servicio').style.display = 'none'; }
+      <div id="alertaPeso" class="alert-box"></div>
+    </div>
 
-        async function guardarServicio() {
-            const servicio = document.getElementById('tipo-servicio').value;
-            const cliente = document.getElementById('nombre-cliente').value.trim();
-            const telefono = document.getElementById('tel-cliente').value.trim();
-            const direccion = document.getElementById('dir-cliente').value.trim();
+    <!-- 4. CIRCUITO Y LIQUIDACIÓN -->
+    <div class="rb-section">
+      <h2>4. Liquidación por Circuito Completo (Desde Hub Col. San Pedro)</h2>
+      <div class="grid-3">
+        <div>
+          <label>Zona Tarifaria</label>
+          <select id="tarifaKm" onchange="calcularTodo()">
+            <option value="10">Urbano SPS (L. 10.00 / km)</option>
+            <option value="15">Interurbano: Choloma, Villanueva, Cofradía, Naco, El Progreso, Ocotillo (L. 15.00 / km)</option>
+          </select>
+        </div>
+        <div>
+          <label>Tramo 1: Hub -> Recolecta (km)</label>
+          <input type="number" step="0.1" id="kmT1" value="0" min="0" oninput="calcularTodo()" required>
+        </div>
+        <div>
+          <label>Tramo 2: Recolecta -> Entrega(s) (km)</label>
+          <input type="number" step="0.1" id="kmT2" value="0" min="0" oninput="calcularTodo()" required>
+        </div>
+      </div>
 
-            if (!cliente || !direccion) return alert('Completa los campos obligatorios.');
+      <div class="grid-3" style="margin-top:12px;">
+        <div>
+          <label>Tramo 3: Última Entrega -> Hub (km)</label>
+          <input type="number" step="0.1" id="kmT3" value="0" min="0" oninput="calcularTodo()" required>
+        </div>
+        <div>
+          <label>Gestión de Cobro Contra Entrega (COD)</label>
+          <select id="codActivo" onchange="calcularTodo()">
+            <option value="0">Sin Gestión COD (L. 0.00)</option>
+            <option value="30">Con Gestión COD (+ L. 30.00)</option>
+          </select>
+        </div>
+        <div>
+          <label>Monto de Mercadería a Cobrar (COD L.)</label>
+          <input type="number" id="montoCod" placeholder="L. 0.00 (Efectivo o Transferencia)" value="0">
+        </div>
+      </div>
 
-            // Coordenadas simuladas inteligentes dentro de SPS o geocodificadas
-            let coords = [BASE_SPS[0] + (Math.random() - 0.5) * 0.03, BASE_SPS[1] + (Math.random() - 0.5) * 0.03];
+      <div class="grid-3" style="margin-top:12px;">
+        <div>
+          <label>Cargos Operativos (Auxiliar / Terreno / Estadía L.)</label>
+          <input type="number" id="cargosExtra" value="0" min="0" oninput="calcularTodo()">
+        </div>
+        <div>
+          <label>Modalidad de Pago del Flete</label>
+          <select id="metodoPago" onchange="calcularTodo()">
+            <option value="Contado / Transferencia Directa">Contado / Transferencia Directa</option>
+            <option value="Crédito / Facturación Corporativa B2B (Aplica Retención 12.5% ISR)">Facturación B2B con Retención 12.5% ISR</option>
+          </select>
+        </div>
+      </div>
 
-            try {
-                const query = encodeURIComponent(direccion + ', San Pedro Sula, Honduras');
-                const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?proximity=${BASE_SPS[0]},${BASE_SPS[1]}&access_token=${mapboxgl.accessToken}`);
-                const data = await res.json();
-                if (data.features && data.features.length > 0) {
-                    coords = data.features[0].center;
-                }
-            } catch(e) {}
+      <div class="summary-box">
+        <div class="summary-line"><span>Circuito Total Auditable (T1 + T2 + T3):</span> <strong id="resKm">0.0 km</strong></div>
+        <div class="summary-line"><span>Peso Bruto Declarado en ZMax 200:</span> <strong id="resPeso">0 kg / 400 kg</strong></div>
+        <div class="summary-line"><span>Flete por Kilometraje + Extras + COD:</span> <strong id="resSubtotal">L. 0.00</strong></div>
+        <div class="summary-line" id="filaIsr" style="display:none;"><span>Retención ISR Corporativo (12.5%):</span> <strong id="resIsr">- L. 0.00</strong></div>
+        <div class="summary-total"><span>TOTAL NETO SERVICIO (Exento ISV):</span> <span id="resTotal">L. 0.00</span></div>
+      </div>
 
-            const nuevo = {
-                id: Date.now(),
-                servicio,
-                cliente,
-                telefono,
-                direccion,
-                coords,
-                estado: 'pendiente'
-            };
+      <button type="submit" id="btnSubmit" class="btn-whatsapp">
+        Generar Orden Técnica y Enviar a WhatsApp Business
+      </button>
+    </div>
+  </form>
+</div>
 
-            servicios.push(nuevo);
-            localStorage.setItem('rutas_barralaga_operacion', JSON.stringify(servicios));
+<script>
+  let contadorParadas = 0;
 
-            document.getElementById('nombre-cliente').value = '';
-            document.getElementById('tel-cliente').value = '';
-            document.getElementById('dir-cliente').value = '';
-            cerrarModal();
-            renderizarOperacion();
-        }
+  function toggleParadas() {
+    const mod = document.getElementById('modalidad').value;
+    const bloque = document.getElementById('bloqueParadas');
+    if (mod.includes('Multidrop') || mod.includes('Milk Run')) {
+      bloque.style.display = 'block';
+      if (contadorParadas === 0) agregarParada();
+    } else {
+      bloque.style.display = 'none';
+      document.getElementById('listaParadas').innerHTML = '';
+      contadorParadas = 0;
+    }
+  }
 
-        function renderizarOperacion() {
-            marcadores.forEach(m => m.remove());
-            marcadores = [];
+  function agregarParada() {
+    contadorParadas++;
+    const div = document.createElement('div');
+    div.className = 'stop-row';
+    div.id = 'parada_' + contadorParadas;
+    div.innerHTML = `
+      <div class="grid-3">
+        <div>
+          <label>Rol de Parada #${contadorParadas}</label>
+          <select class="p-rol">
+            <option value="Entrega (Drop)">[E] Entrega</option>
+            <option value="Recolecta (Pickup)">[R] Recolecta</option>
+          </select>
+        </div>
+        <div>
+          <label>Cliente / Proveedor y Dirección</label>
+          <input type="text" class="p-dir" placeholder="Nombre, Colonia y Punto" required>
+        </div>
+        <div>
+          <label>Contacto y Cobro COD en Parada (L.)</label>
+          <input type="text" class="p-cod" placeholder="Tel y Monto COD si aplica">
+        </div>
+      </div>
+      <button type="button" class="btn-remove" onclick="this.parentElement.remove()">Eliminar Parada</button>
+    `;
+    document.getElementById('listaParadas').appendChild(div);
+  }
 
-            // Pin de Base
-            const elBase = document.createElement('div');
-            elBase.innerHTML = '🏢';
-            elBase.style.fontSize = '24px';
-            marcadores.push(new mapboxgl.Marker(elBase).setLngLat(BASE_SPS).setPopup(new mapboxgl.Popup().setText('Base Rutas Barralaga')).addTo(map));
+  function calcularTodo() {
+    const pesoCaja = parseFloat(document.getElementById('pesoCaja').value) || 0;
+    const pesoTecho = parseFloat(document.getElementById('pesoTecho').value) || 0;
+    const pesoTotal = pesoCaja + pesoTecho;
 
-            const contenedor = document.getElementById('contenedor-lista');
-            contenedor.innerHTML = '';
+    const alerta = document.getElementById('alertaPeso');
+    const btn = document.getElementById('btnSubmit');
 
-            servicios.forEach((item, index) => {
-                const colorPin = item.estado === 'completado' ? '#16a34a' : '#111111';
-                const elPin = document.createElement('div');
-                elPin.innerHTML = `<div style="background:${colorPin}; color:white; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:11px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">${index + 1}</div>`;
+    if (pesoTotal > 400) {
+      alerta.style.display = 'block';
+      alerta.textContent = `ALERTA TÉCNICA: El peso total (${pesoTotal} kg) supera la capacidad máxima de 400 kg de la ZMoto ZMax 200.`;
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+    } else if (pesoTecho > 100) {
+      alerta.style.display = 'block';
+      alerta.textContent = `ADVERTENCIA DE ESTABILIDAD: Se recomienda no superar 100 kg en la parrilla de techo (2.50x1.05m). Pase carga pesada al piso de la caja seca.`;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    } else {
+      alerta.style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
 
-                const marker = new mapboxgl.Marker(elPin)
-                    .setLngLat(item.coords)
-                    .setPopup(new mapboxgl.Popup().setHTML(`<b>#${index + 1} - ${item.cliente}</b><br>${item.servicio}<br>${item.direccion}`))
-                    .addTo(map);
-                marcadores.push(marker);
+    const t1 = parseFloat(document.getElementById('kmT1').value) || 0;
+    const t2 = parseFloat(document.getElementById('kmT2').value) || 0;
+    const t3 = parseFloat(document.getElementById('kmT3').value) || 0;
+    const kmTotal = t1 + t2 + t3;
 
-                const card = document.createElement('div');
-                card.className = `tarjeta-pedido ${item.estado === 'completado' ? 'completado' : ''}`;
-                card.innerHTML = `
-                    <div class="info-superior">
-                        <span class="badge-numero">#${index + 1}</span>
-                        <span class="badge-servicio">${item.servicio}</span>
-                    </div>
-                    <div>
-                        <p class="cliente-nombre">${item.cliente} ${item.estado === 'completado' ? '✅' : ''}</p>
-                        <p class="cliente-dir">📍 ${item.direccion}</p>
-                    </div>
-                    <div class="botones-accion">
-                        <button class="btn btn-map" onclick="map.flyTo({center: [${item.coords}], zoom: 16})">🗺️ Ver</button>
-                        <button class="btn btn-wa" onclick="enviarWhatsApp('${item.cliente}', '${item.direccion}', '${item.telefono}')">💬 WhatsApp</button>
-                        ${item.estado === 'pendiente' ? `<button class="btn btn-ok" onclick="completar(${item.id})">✔️ Listo</button>` : ''}
-                    </div>
-                `;
-                contenedor.appendChild(card);
-            });
-        }
+    const tarifa = parseFloat(document.getElementById('tarifaKm').value) || 10;
+    const cod = parseFloat(document.getElementById('codActivo').value) || 0;
+    const extra = parseFloat(document.getElementById('cargosExtra').value) || 0;
 
-        function completar(id) {
-            const s = servicios.find(x => x.id === id);
-            if (s) {
-                s.estado = 'completado';
-                localStorage.setItem('rutas_barralaga_operacion', JSON.stringify(servicios));
-                renderizarOperacion();
-            }
-        }
+    const subtotal = (kmTotal * tarifa) + cod + extra;
+    const metodoPago = document.getElementById('metodoPago').value;
+    let retencion = 0;
 
-        function enviarWhatsApp(cliente, direccion, telefono) {
-            const num = telefono ? telefono.replace(/\D/g, '') : '';
-            const msj = encodeURIComponent(`Hola ${cliente}, le saludamos de Rutas Barralaga 🚚. Su servicio hacia *${direccion}* está programado y en proceso.`);
-            window.open(`https://wa.me/${num}?text=${msj}`, '_blank');
-        }
-    </script>
+    if (metodoPago.includes('12.5%')) {
+      retencion = subtotal * 0.125;
+      document.getElementById('filaIsr').style.display = 'flex';
+    } else {
+      document.getElementById('filaIsr').style.display = 'none';
+    }
+
+    const totalNeto = subtotal - retencion;
+
+    document.getElementById('resKm').textContent = kmTotal.toFixed(1) + ' km';
+    document.getElementById('resPeso').textContent = pesoTotal + ' kg / 400 kg';
+    document.getElementById('resSubtotal').textContent = 'L. ' + subtotal.toFixed(2);
+    document.getElementById('resIsr').textContent = '- L. ' + retencion.toFixed(2);
+    document.getElementById('resTotal').textContent = 'L. ' + totalNeto.toFixed(2);
+
+    return { pesoCaja, pesoTecho, pesoTotal, t1, t2, t3, kmTotal, tarifa, cod, extra, subtotal, retencion, totalNeto };
+  }
+
+  function enviarOrdenWhatsApp(e) {
+    e.preventDefault();
+    const calc = calcularTodo();
+    if (calc.pesoTotal > 400) return;
+
+    const checksReq = Array.from(document.querySelectorAll('.req-check:checked')).map(c => c.value).join(', ') || 'Estándar';
+    const checksManejo = Array.from(document.querySelectorAll('.manejo-check:checked')).map(c => c.value).join(', ') || 'Seco Estándar';
+
+    let paradasTxt = '';
+    document.querySelectorAll('.stop-row').forEach((row, idx) => {
+      const rol = row.querySelector('.p-rol').value;
+      const dir = row.querySelector('.p-dir').value;
+      const codP = row.querySelector('.p-cod').value;
+      paradasTxt += `\n   • Parada ${idx + 1} [${rol}]: ${dir} (${codP || 'Sin COD'})`;
+    });
+
+    const folio = 'RB-2026-' + Math.floor(1000 + Math.random() * 9000);
+    const mensaje = `*ORDEN TÉCNICA DE RECOLECTA Y ENTREGA — RUTAS BARRALAGA*
+*Folio:* ${folio}
+*Unidad:* ZMoto ZMax 200 Roja (Caja Seca Blanca | Máx 400 kg)
+*RTN:* 05011995073267 (Exento de ISV)
+-----------------------------------------
+*1. CUENTA Y SLA*
+• *Cliente:* ${document.getElementById('clienteNombre').value} (RTN/ID: ${document.getElementById('clienteRtn').value || 'N/A'})
+• *PO / Factura:* ${document.getElementById('ordenCompra').value || 'N/A'}
+• *Operación:* ${document.getElementById('segmento').value} | ${document.getElementById('modalidad').value}
+• *SLA:* ${document.getElementById('sla').value}
+
+*2. RUTA E INFRAESTRUCTURA*
+• *Recolecta:* ${document.getElementById('origenDir').value} (${document.getElementById('origenAcceso').value})
+• *Contacto Origen:* ${document.getElementById('origenContacto').value}
+• *Entrega Principal:* ${document.getElementById('destinoDir').value} (${document.getElementById('destinoAcceso').value})
+• *Contacto Destino:* ${document.getElementById('destinoContacto').value}${paradasTxt ? '\n• *Secuencia Multidrop/Milk Run:*' + paradasTxt : ''}
+• *Protocolo POD/EHS:* ${checksReq}
+
+*3. CUBICAJE EN ZMAX 200*
+• *Caja Seca (1.05x1.50x1.60m):* ${calc.pesoCaja} kg
+• *Parrilla Techo (2.50x1.05m):* ${calc.pesoTecho} kg
+• *Peso Bruto Total:* ${calc.pesoTotal} kg / 400 kg (${document.getElementById('totalBultos').value} bultos)
+• *Detalle:* ${document.getElementById('descCarga').value}
+• *Manejo:* ${checksManejo} | *Valor Declarado:* L. ${document.getElementById('valorDeclarado').value}
+
+*4. LIQUIDACIÓN POR CIRCUITO (HUB COL. SAN PEDRO)*
+• *T1 (Hub -> Recolecta):* ${calc.t1} km
+• *T2 (Recolecta -> Entrega/Secuencia):* ${calc.t2} km
+• *T3 (Entrega -> Hub Col. San Pedro):* ${calc.t3} km
+• *Recorrido Total:* ${calc.kmTotal.toFixed(1)} km (a L. ${calc.tarifa}.00/km)
+• *Gestión COD:* L. ${calc.cod.toFixed(2)} (Cobrar al destinatario: L. ${document.getElementById('montoCod').value})
+• *Cargos Operativos:* L. ${calc.extra.toFixed(2)}
+• *Subtotal Servicio:* L. ${calc.subtotal.toFixed(2)}${calc.retencion > 0 ? '\n• *Retención 12.5% ISR:* - L. ' + calc.retencion.toFixed(2) : ''}
+*TOTAL NETO A PAGAR:* *L. ${calc.totalNeto.toFixed(2)}* (${document.getElementById('metodoPago').value})`;
+
+    const url = 'https://wa.me/50433878492?text=' + encodeURIComponent(mensaje);
+    window.open(url, '_blank');
+  }
+</script>
+
 </body>
 </html>
